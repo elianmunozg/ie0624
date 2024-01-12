@@ -2,16 +2,20 @@
 FAMILY=-mpic14
 MCU=-p12f683
 CC=sdcc
-CFLAGS=-I. -I/usr/local/share/sdcc/non-free/include --use-non-free
+CFLAGS=-I. -I"C:\Program Files\SDCC\non-free\include" --use-non-free
 
 # Nombre del archivo fuente y del objetivo
-SRCS= bingo.c
+SRCS=bingo.c
 TARGET=bingo
 
 # Regla 'all' para compilar el código
 all:
+	@echo "Compilando $(SRCS)..."
 	$(CC) $(FAMILY) $(MCU) $(CFLAGS) -o $(TARGET).hex $(SRCS)
+	@echo "Compilación completada."
 
 # Regla 'clean' para limpiar archivos generados
 clean:
-	rm -f *.c~ *.h~ *.o *.elf *.hex *.asm *.lst *.cod
+	@echo "Limpiando archivos generados..."
+	del /Q *.c~ *.h~ *.o *.elf *.hex *.asm *.lst *.cod
+	@echo "Limpieza completada."

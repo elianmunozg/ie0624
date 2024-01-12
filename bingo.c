@@ -19,8 +19,7 @@ void initPIC() {
     TRISIO = 0x20; // GP5 como entrada, otros como salida
     GPIO = 0x00; // Todos los pines en bajo
 
-    // Configuración de interrupciones, timers, etc.
-    // ... (completar según necesidad)
+    
 }
 
 unsigned int contador = 0;
@@ -35,13 +34,24 @@ void mostrarNumero(int numero) {
     int decenas = numero / 10; // Extraer las decenas
     int unidades = numero % 10; // Extraer las unidades
 
-    // Asumiendo que tienes dos sets de pines para cada dígito
-    // Por ejemplo, GP0 para las unidades y GP1 para las decenas
-    // Envía el valor BCD a los pines correspondientes
-    // Nota: Ajusta los nombres de los pines según tu configuración
+   
     GP0 = unidades; // Enviar unidades al primer display
     GP1 = decenas;  // Enviar decenas al segundo display
 }
+
+// Función para verificar si un número ya fue generado
+int numeroYaGenerado(int numero) {
+    for (int i = 0; i < 10; i++) {
+        if (numerosGenerados[i] == numero) {
+            return 1; // Número ya fue generado
+        }
+    }
+    return 0; // Número no ha sido generado
+}
+
+
+
+
 void main() {
     initPIC(); // Inicializar el PIC
 
@@ -75,17 +85,8 @@ void main() {
             }
 
             mostrarNumero(numero);
-            __delay_ms(500); // Retardo para evitar rebotes del botón
+            
         }
     }
 }
 
-// Función para verificar si un número ya fue generado
-int numeroYaGenerado(int numero) {
-    for (int i = 0; i < 10; i++) {
-        if (numerosGenerados[i] == numero) {
-            return 1; // Número ya fue generado
-        }
-    }
-    return 0; // Número no ha sido generado
-}
