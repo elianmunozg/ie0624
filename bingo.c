@@ -1,50 +1,91 @@
 #include <pic14/pic12f683.h>
 
+// Configuración de pines
+#define BOTON GP5      // Botón conectado al pin GP5
+#define UNIDADES GP0   // Pines de salida para las unidades conectados a GP0
+#define DECENAS GP1    // Pines de salida para las decenas conectados a GP1
 
-// Configuración del microcontrolador
-__CONFIG(FOSC_INTRCIO & WDTE_OFF & PWRTE_OFF & MCLRE_OFF & CP_OFF & CPD_OFF & BOREN_OFF & IESO_OFF & FCMEN_OFF);
-
-// Prototipos de funciones
-void delay(unsigned int tiempo);
-void mostrarNumero(unsigned char numero);
 
 // Variables globales
-unsigned char numeros[10] = {0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F}; // Códigos de los números para el display de 7 segmentos
-unsigned char contador = 0; // Contador para la generación del número aleatorio
+int numerosGenerados[10]; // Almacena los 10 números únicos
+int indiceNumeros = 0;    // Índice para el arreglo de números generados
+int contador99 = 0;       // Contador para las veces que se muestra el 99
 
-void main(void) {
-    unsigned char numeroAleatorio;
-    
-    TRISIO = 0x00; // Configura todos los pines como salidas
-    GPIO = 0x00;   // Pone todos los pines en bajo
-    
+
+// Configuración inicial del PIC
+void initPIC() {
+    // Configuración de pines y modos
+    ANSEL = 0x00; // Todos los pines como digitales
+    TRISIO = 0x20; // GP5 como entrada, otros como salida
+    GPIO = 0x00; // Todos los pines en bajo
+
+    // Configuración de interrupciones, timers, etc.
+    // ... (completar según necesidad)
+}
+
+unsigned int contador = 0;
+
+int generarNumeroAleatorio() {
+    contador++;  // Incrementar el contador
+    return (contador % 100);  // Retornar un número entre 0 y 99
+}
+
+
+void mostrarNumero(int numero) {
+    int decenas = numero / 10; // Extraer las decenas
+    int unidades = numero % 10; // Extraer las unidades
+
+    // Asumiendo que tienes dos sets de pines para cada dígito
+    // Por ejemplo, GP0 para las unidades y GP1 para las decenas
+    // Envía el valor BCD a los pines correspondientes
+    // Nota: Ajusta los nombres de los pines según tu configuración
+    GP0 = unidades; // Enviar unidades al primer display
+    GP1 = decenas;  // Enviar decenas al segundo display
+}
+void main() {
+    initPIC(); // Inicializar el PIC
+
+    // Inicializar el arreglo de números generados
+    for (int i = 0; i < 10; i++) {
+        numerosGenerados[i] = -1; // -1 indica que aún no se ha generado el número
+    }
+
+    // Bucle principal
     while(1) {
-        if(GP3) { // Suponiendo que GP3 está conectado al botón
-            numeroAleatorio = contador % 100; // Genera un número entre 0 y 99
-            mostrarNumero(numeroAleatorio);   // Muestra el número en el display
-            contador = 0; // Resetea el contador
-        } else {
-            contador++; // Incrementa el contador mientras el botón no se presiona
-            if(contador == 255) {
-                contador = 0; // Evita desbordamiento del contador
+        if (BOTON == 1) { // Suponiendo que 1 es presionado
+            int numero;
+
+            if (indiceNumeros < 10) {
+                do {
+                    numero = generarNumeroAleatorio();
+                } while (numeroYaGenerado(numero)); // Verificar si el número ya fue generado
+
+                numerosGenerados[indiceNumeros++] = numero;
+            } else if (contador99 < 3) {
+                numero = 99;
+                contador99++;
+            } else {
+                // Reiniciar para una nueva secuencia
+                indiceNumeros = 0;
+                contador99 = 0;
+                for (int i = 0; i < 10; i++) {
+                    numerosGenerados[i] = -1;
+                }
+                continue;
             }
+
+            mostrarNumero(numero);
+            __delay_ms(500); // Retardo para evitar rebotes del botón
         }
-        delay(100); // Un pequeño retardo para la estabilidad
     }
 }
 
-void mostrarNumero(unsigned char numero) {
-    unsigned char decenas = numero / 10;
-    unsigned char unidades = numero % 10;
-    
-   
-    GPIO = numeros[decenas]; //  los segmentos están conectados a los pines GPIO<0:6>
-    
+// Función para verificar si un número ya fue generado
+int numeroYaGenerado(int numero) {
+    for (int i = 0; i < 10; i++) {
+        if (numerosGenerados[i] == numero) {
+            return 1; // Número ya fue generado
+        }
+    }
+    return 0; // Número no ha sido generado
 }
-
-void delay(unsigned int tiempo) {
-    unsigned int i;
-    for(i = 0; i < tiempo; i++);
-}
-
-
