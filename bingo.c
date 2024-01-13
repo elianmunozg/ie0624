@@ -1,92 +1,116 @@
 #include <pic14/pic12f683.h>
 
 // Configuración de pines
-#define BOTON GP5      // Botón conectado al pin GP5
-#define UNIDADES GP0   // Pines de salida para las unidades conectados a GP0
-#define DECENAS GP1    // Pines de salida para las decenas conectados a GP1
-
+#define BOTON GP5          // Botón conectado al pin GP5
+#define SALIDA_BCD GP0_GP4 // Pines de salida BCD conectados a GP0 a GP3
 
 // Variables globales
-int numerosGenerados[10]; // Almacena los 10 números únicos
-int indiceNumeros = 0;    // Índice para el arreglo de números generados
-int contador99 = 0;       // Contador para las veces que se muestra el 99
-
-
-// Configuración inicial del PIC
-void initPIC() {
-    // Configuración de pines y modos
-    ANSEL = 0x00; // Todos los pines como digitales
-    TRISIO = 0x20; // GP5 como entrada, otros como salida
-    GPIO = 0x00; // Todos los pines en bajo
-
-    
-}
-
+int numerosGenerados[10];
+int indiceNumeros = 0;
 unsigned int contador = 0;
+int contador9 = 0;
+unsigned int seed = 0;  // Semilla para la generación de números pseudoaleatorios
+
+void initPIC() {
+    ANSEL = 0x00;
+    TRISIO = 0x20;
+    GPIO = 0x00;
+}
 
 int generarNumeroAleatorio() {
-    contador++;  // Incrementar el contador
-    return (contador % 100);  // Retornar un número entre 0 y 99
+    seed = seed + 1;  // Incrementa la semilla
+    return (seed * 32719 + 3) % 10;  // Genera un número entre 0 y 9
 }
 
 
-void mostrarNumero(int numero) {
-    int decenas = numero / 10; // Extraer las decenas
-    int unidades = numero % 10; // Extraer las unidades
 
-   
-    GP0 = unidades; // Enviar unidades al primer display
-    GP1 = decenas;  // Enviar decenas al segundo display
-}
 
-// Función para verificar si un número ya fue generado
-int numeroYaGenerado(int numero) {
-    for (int i = 0; i < 10; i++) {
-        if (numerosGenerados[i] == numero) {
-            return 1; // Número ya fue generado
+void mostrarNumeroBCD(int numeroBCD) {
+    // Asumiendo que GP0, GP1, GP2 y GP4 están conectados para representar el BCD de 4 bits (bits 0, 1, 2 y 4).
+
+    // Apagar todos los pines inicialmente
+    GPIO &= 0xF0; // Mantener GP0, GP1, GP2 y GP4 en bajo (0)
+
+    if (numeroBCD >= 0 && numeroBCD <= 9) {
+        // Asignar los 3 bits menos significativos de BCD a GP0, GP1 y GP2
+        GPIO |= (numeroBCD & 0x07); 
+
+        // Asignar el bit más significativo de BCD a GP4
+        if (numeroBCD >= 8) {
+            GPIO |= (1 << GP4);
         }
     }
-    return 0; // Número no ha sido generado
 }
 
 
 
+int numeroYaGenerado(int numero) {
+    for (int i = 0; i < indiceNumeros; i++) {
+        if (numerosGenerados[i] == numero) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+void delay_ms(unsigned int milliseconds) {
+    unsigned int i, j;
+    for (i = 0; i < milliseconds; i++) {
+        for (j = 0; j < 200; j++) { }
+    }
+}
+
+void reiniciarNumerosGenerados() {
+    for (int i = 0; i < 10; i++) {
+        numerosGenerados[i] = -1;
+    }
+    indiceNumeros = 0;
+    contador9 = 0;
+}
+
+void generarYMostrarNumeros() {
+    int numero = generarNumeroAleatorio();
+    while (numeroYaGenerado(numero)) {
+        numero = generarNumeroAleatorio();
+    }
+    numerosGenerados[indiceNumeros++] = numero;
+    mostrarNumeroBCD(numero);
+    delay_ms(1000);
+}
+
+void parpadearNumero9() {
+    mostrarNumeroBCD(9);
+    delay_ms(1000); // Encendido durante 500 ms
+    GPIO &= 0xF0;  // Apagar GP0-GP3
+    delay_ms(500); // Apagado durante 500 ms
+}
 
 void main() {
-    initPIC(); // Inicializar el PIC
+    initPIC();
+    reiniciarNumerosGenerados();
 
-    // Inicializar el arreglo de números generados
-    for (int i = 0; i < 10; i++) {
-        numerosGenerados[i] = -1; // -1 indica que aún no se ha generado el número
-    }
-
-    // Bucle principal
     while(1) {
-        if (BOTON == 1) { // Suponiendo que 1 es presionado
-            int numero;
-
+        if (BOTON == 1) { // Verificar si el botón es presionado
             if (indiceNumeros < 10) {
+                int numero;
                 do {
                     numero = generarNumeroAleatorio();
-                } while (numeroYaGenerado(numero)); // Verificar si el número ya fue generado
+                } while (numeroYaGenerado(numero));
 
                 numerosGenerados[indiceNumeros++] = numero;
-            } else if (contador99 < 3) {
-                numero = 99;
-                contador99++;
-            } else {
-                // Reiniciar para una nueva secuencia
-                indiceNumeros = 0;
-                contador99 = 0;
-                for (int i = 0; i < 10; i++) {
-                    numerosGenerados[i] = -1;
-                }
-                continue;
+                mostrarNumeroBCD(numero);
+                delay_ms(2000); // Mostrar el número durante 2 segundos
             }
+        }
 
-            mostrarNumero(numero);
-            
+        // Iniciar el parpadeo del 9 una vez que se han mostrado 10 números
+        if (indiceNumeros >= 10 && contador9 < 3) {
+            parpadearNumero9();
+            contador9++;
+            if (contador9 >= 3) {
+                delay_ms(1000); // Esperar un poco antes de reiniciar
+                reiniciarNumerosGenerados();
+            }
         }
     }
 }
-

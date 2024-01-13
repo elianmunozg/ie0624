@@ -1,0 +1,73 @@
+<circuit version="1.0.0-SR1" rev="1448" stepSize="1000000" stepsPS="1000000" NLsteps="100000" reaStep="1000000" animate="0" >
+
+<item itemtype="MCU" CircId="p12F683-39" mainComp="false" Show_id="true" Show_Val="false" Pos="-500,-392" rotation="0" hflip="1" vflip="1" label="p12F683-39" idLabPos="0,-20" labelrot="0" valLabPos="-16,20" valLabRot="0" Frequency="16 MHz" Program="../../../../Documents/Scripts/ie0624/bingo.hex" Auto_Load="true" Rst_enabled="false" Ext_Osc="false" Wdt_enabled="false" />
+
+<item itemtype="Push" CircId="Push-85" mainComp="false" Show_id="false" Show_Val="false" Pos="-556,-252" rotation="90" hflip="1" vflip="1" label="Push-85" idLabPos="-12,-24" labelrot="0" valLabPos="-16,20" valLabRot="0" Norm_Close="true" Poles="1 _Polos" />
+
+<item itemtype="Ground" CircId="Ground-146" mainComp="false" Show_id="false" Show_Val="false" Pos="-556,-196" rotation="0" hflip="1" vflip="1" label="Ground-146" idLabPos="-16,8" labelrot="0" valLabPos="-16,20" valLabRot="0" />
+
+<item itemtype="Resistor" CircId="Resistor-251" mainComp="false" ShowProp="Resistance" Show_id="false" Show_Val="true" Pos="-572,-348" rotation="0" hflip="1" vflip="1" label="Resistor-251" idLabPos="-16,-24" labelrot="0" valLabPos="-16,6" valLabRot="0" Resistance="10 kΩ" />
+
+<item itemtype="Battery" CircId="Battery-252" mainComp="false" Show_id="false" Show_Val="false" Pos="-588,-396" rotation="0" hflip="1" vflip="1" label="Battery-252" idLabPos="-18,-22" labelrot="0" valLabPos="-10,10" valLabRot="0" Voltage="5 V" Resistance="1e-14 Ω" />
+
+<item itemtype="Ground" CircId="Ground-258" mainComp="false" Show_id="false" Show_Val="false" Pos="-540,-356" rotation="0" hflip="1" vflip="1" label="Ground-258" idLabPos="-16,8" labelrot="0" valLabPos="-16,20" valLabRot="0" />
+
+<item itemtype="Seven Segment" CircId="Seven Segment-273" mainComp="false" Show_id="false" Show_Val="false" Pos="-332,-368" rotation="0" hflip="1" vflip="1" label="Seven Segment-273" idLabPos="20,-44" labelrot="0" valLabPos="-16,20" valLabRot="0" NumDisplays="2 _7seg" Color="Yellow" Vertical_Pins="false" CommonCathode="true" Threshold="2.4 V" MaxCurrent="0.02 A" Resistance="1 Ω" />
+
+<item itemtype="BcdTo7S" CircId="BcdTo7S-274" mainComp="false" Show_id="false" Show_Val="false" Pos="-404,-368" rotation="0" hflip="1" vflip="1" label="BcdTo7S-274" idLabPos="-16,-24" labelrot="0" valLabPos="-16,20" valLabRot="0" Inverted="false" Input_High_V="2.5 V" Input_Low_V="2.5 V" Input_Imped="1000 MΩ" Out_High_V="5 V" Out_Low_V="0 V" Out_Imped="40 Ω" Tpd_ps="10000 ps" Tr_ps="3000 ps" Tf_ps="4000 ps" />
+
+<item itemtype="Node" CircId="Node-294" mainComp="false" Pos="-604,-396" />
+
+<item itemtype="Node" CircId="Node-338" mainComp="false" Pos="-556,-228" />
+
+<item itemtype="Node" CircId="Node-341" mainComp="false" Pos="-556,-288" />
+
+<item itemtype="Node" CircId="Node-344" mainComp="false" Pos="-556,-324" />
+
+<item itemtype="Connector" uid="connector-315" startpinid="Ground-258-Gnd" endpinid="Battery-252-rPin" pointList="-540,-372,-540,-396,-572,-396" />
+
+<item itemtype="Connector" uid="connector-316" startpinid="Battery-252-lPin" endpinid="Node-294-0" pointList="-604,-396,-604,-396" />
+
+<item itemtype="Connector" uid="connector-317" startpinid="p12F683-39-PORTP0" endpinid="BcdTo7S-274-in0" pointList="-460,-376,-428,-376" />
+
+<item itemtype="Connector" uid="connector-318" startpinid="p12F683-39-PORTP1" endpinid="BcdTo7S-274-in1" pointList="-460,-368,-428,-368" />
+
+<item itemtype="Connector" uid="connector-319" startpinid="p12F683-39-PORTP2" endpinid="BcdTo7S-274-in2" pointList="-460,-360,-428,-360" />
+
+<item itemtype="Connector" uid="connector-320" startpinid="BcdTo7S-274-out0" endpinid="Seven Segment-273-pin_a" pointList="-380,-392,-356,-392" />
+
+<item itemtype="Connector" uid="connector-321" startpinid="BcdTo7S-274-out1" endpinid="Seven Segment-273-pin_b" pointList="-380,-384,-356,-384" />
+
+<item itemtype="Connector" uid="connector-322" startpinid="BcdTo7S-274-out2" endpinid="Seven Segment-273-pin_c" pointList="-380,-376,-356,-376" />
+
+<item itemtype="Connector" uid="connector-323" startpinid="BcdTo7S-274-out3" endpinid="Seven Segment-273-pin_d" pointList="-380,-368,-356,-368" />
+
+<item itemtype="Connector" uid="connector-324" startpinid="BcdTo7S-274-out4" endpinid="Seven Segment-273-pin_e" pointList="-380,-360,-356,-360" />
+
+<item itemtype="Connector" uid="connector-325" startpinid="BcdTo7S-274-out5" endpinid="Seven Segment-273-pin_f" pointList="-380,-352,-356,-352" />
+
+<item itemtype="Connector" uid="connector-326" startpinid="BcdTo7S-274-out6" endpinid="Seven Segment-273-pin_g" pointList="-380,-344,-356,-344" />
+
+<item itemtype="Connector" uid="connector-327" startpinid="Seven Segment-273-pin_dot" endpinid="Node-294-1" pointList="-340,-336,-340,-228,-276,-228,-276,-420,-604,-420,-604,-396" />
+
+<item itemtype="Connector" uid="connector-328" startpinid="Node-294-2" endpinid="Resistor-251-lPin" pointList="-604,-396,-604,-348,-588,-348" />
+
+<item itemtype="Connector" uid="Connector-337" startpinid="Seven Segment-273-pin_commonb" endpinid="Node-338-1" pointList="-292,-336,-292,-228,-556,-228" />
+
+<item itemtype="Connector" uid="Connector-339" startpinid="Node-338-2" endpinid="Push-85-switch0pinN" pointList="-556,-228,-556,-236" />
+
+<item itemtype="Connector" uid="connector-330" startpinid="Ground-146-Gnd" endpinid="Node-338-0" pointList="-556,-212,-556,-228" />
+
+<item itemtype="Connector" uid="Connector-340" startpinid="Seven Segment-273-pin_commona" endpinid="Node-341-1" pointList="-324,-336,-324,-288,-556,-288" />
+
+<item itemtype="Connector" uid="Connector-342" startpinid="Node-341-2" endpinid="Push-85-pinP0" pointList="-556,-288,-556,-268" />
+
+<item itemtype="Connector" uid="connector-329" startpinid="Resistor-251-rPin" endpinid="Node-344-0" pointList="-556,-348,-556,-324" />
+
+<item itemtype="Connector" uid="Connector-343" startpinid="p12F683-39-PORTP5" endpinid="Node-344-1" pointList="-508,-376,-524,-376,-524,-324,-556,-324" />
+
+<item itemtype="Connector" uid="Connector-345" startpinid="Node-344-2" endpinid="Node-341-0" pointList="-556,-324,-556,-288" />
+
+<item itemtype="Connector" uid="Connector-347" startpinid="BcdTo7S-274-in3" endpinid="p12F683-39-PORTP4" pointList="-428,-352,-428,-344,-512,-344,-512,-368,-508,-368" />
+
+</circuit>

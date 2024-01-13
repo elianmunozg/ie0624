@@ -11,10 +11,8 @@
 ;--------------------------------------------------------
 ; external declarations
 ;--------------------------------------------------------
-	extern	__mulint
-	extern	__modsint
-	extern	__divsint
 	extern	__moduint
+	extern	__mulint
 	extern	_ANSEL
 	extern	_TRISIO
 	extern	_GPIO
@@ -24,12 +22,17 @@
 ; global declarations
 ;--------------------------------------------------------
 	global	_main
+	global	_parpadearNumero9
+	global	_generarYMostrarNumeros
+	global	_reiniciarNumerosGenerados
+	global	_delay_ms
 	global	_numeroYaGenerado
-	global	_mostrarNumero
+	global	_mostrarNumeroBCD
 	global	_generarNumeroAleatorio
 	global	_initPIC
+	global	_seed
+	global	_contador9
 	global	_contador
-	global	_contador99
 	global	_indiceNumeros
 	global	_numerosGenerados
 
@@ -81,24 +84,24 @@ _numerosGenerados	res	20
 ; compiler-defined variables
 ;--------------------------------------------------------
 UDL_bingo_0	udata
-r0x101A	res	1
 r0x101B	res	1
+r0x101A	res	1
+r0x101C	res	1
 r0x101D	res	1
 r0x101E	res	1
-r0x101C	res	1
 r0x101F	res	1
 r0x1020	res	1
 r0x1021	res	1
 r0x1022	res	1
 r0x1023	res	1
+r0x1029	res	1
+r0x1028	res	1
+r0x102B	res	1
+r0x102A	res	1
 r0x1024	res	1
 r0x1025	res	1
-r0x1026	res	1
 r0x1027	res	1
-r0x1028	res	1
-r0x1029	res	1
-r0x102A	res	1
-r0x102B	res	1
+r0x1026	res	1
 ;--------------------------------------------------------
 ; initialized data
 ;--------------------------------------------------------
@@ -109,12 +112,17 @@ _indiceNumeros
 
 
 IDD_bingo_1	idata
-_contador99
-	db	0x00, 0x00	;  0
+_contador
+	db	0x00, 0x00	; 0
 
 
 IDD_bingo_2	idata
-_contador
+_contador9
+	db	0x00, 0x00	;  0
+
+
+IDD_bingo_3	idata
+_seed
 	db	0x00, 0x00	; 0
 
 ;--------------------------------------------------------
@@ -141,91 +149,47 @@ code_bingo	code
 ;has an exit
 ;functions called:
 ;   _initPIC
+;   _reiniciarNumerosGenerados
 ;   _generarNumeroAleatorio
 ;   _numeroYaGenerado
 ;   __mulint
-;   _mostrarNumero
+;   _mostrarNumeroBCD
+;   _delay_ms
+;   _parpadearNumero9
+;   _delay_ms
+;   _reiniciarNumerosGenerados
 ;   _initPIC
+;   _reiniciarNumerosGenerados
 ;   _generarNumeroAleatorio
 ;   _numeroYaGenerado
 ;   __mulint
-;   _mostrarNumero
-;11 compiler assigned registers:
+;   _mostrarNumeroBCD
+;   _delay_ms
+;   _parpadearNumero9
+;   _delay_ms
+;   _reiniciarNumerosGenerados
+;7 compiler assigned registers:
 ;   r0x1024
 ;   r0x1025
+;   STK00
 ;   r0x1026
 ;   r0x1027
-;   r0x1028
-;   r0x1029
-;   STK00
 ;   STK02
 ;   STK01
-;   r0x102A
-;   r0x102B
 ;; Starting pCode block
 S_bingo__main	code
 _main:
 ; 2 exit points
-;	.line	56; "bingo.c"	initPIC(); // Inicializar el PIC
+;	.line	89; "bingo.c"	initPIC();
 	PAGESEL	_initPIC
 	CALL	_initPIC
 	PAGESEL	$
-;	.line	59; "bingo.c"	for (int i = 0; i < 10; i++) {
-	BANKSEL	r0x1024
-	CLRF	r0x1024
-	CLRF	r0x1025
-	CLRF	r0x1026
-	CLRF	r0x1027
-;;signed compare: left < lit(0xA=10), size=2, mask=ffff
-_00159_DS_:
-	BANKSEL	r0x1025
-	MOVF	r0x1025,W
-	ADDLW	0x80
-	ADDLW	0x80
-	BTFSS	STATUS,2
-	GOTO	_00203_DS_
-	MOVLW	0x0a
-	SUBWF	r0x1024,W
-_00203_DS_:
-	BTFSC	STATUS,0
-	GOTO	_00156_DS_
-;;genSkipc:3307: created from rifx:00000000047A5780
-;	.line	60; "bingo.c"	numerosGenerados[i] = -1; // -1 indica que aún no se ha generado el número
-	BANKSEL	r0x1026
-	MOVF	r0x1026,W
-	ADDLW	(_numerosGenerados + 0)
-	MOVWF	r0x1028
-	MOVLW	high (_numerosGenerados + 0)
-	MOVWF	r0x1029
-	MOVF	r0x1027,W
-	BTFSC	STATUS,0
-	INCFSZ	r0x1027,W
-	ADDWF	r0x1029,F
-	MOVF	r0x1028,W
-	BANKSEL	FSR
-	MOVWF	FSR
-	BCF	STATUS,7
-	BANKSEL	r0x1029
-	BTFSC	r0x1029,0
-	BSF	STATUS,7
-	MOVLW	0xff
-	BANKSEL	INDF
-	MOVWF	INDF
-	INCF	FSR,F
-	MOVLW	0xff
-	MOVWF	INDF
-;	.line	59; "bingo.c"	for (int i = 0; i < 10; i++) {
-	MOVLW	0x02
-	BANKSEL	r0x1026
-	ADDWF	r0x1026,F
-	BTFSC	STATUS,0
-	INCF	r0x1027,F
-	INCF	r0x1024,F
-	BTFSC	STATUS,2
-	INCF	r0x1025,F
-	GOTO	_00159_DS_
-_00156_DS_:
-;	.line	65; "bingo.c"	if (BOTON == 1) { // Suponiendo que 1 es presionado
+;	.line	90; "bingo.c"	reiniciarNumerosGenerados();
+	PAGESEL	_reiniciarNumerosGenerados
+	CALL	_reiniciarNumerosGenerados
+	PAGESEL	$
+_00243_DS_:
+;	.line	93; "bingo.c"	if (BOTON == 1) { // Verificar si el botón es presionado
 	BANKSEL	r0x1024
 	CLRF	r0x1024
 	BANKSEL	_GPIObits
@@ -238,60 +202,60 @@ _00001_DS_:
 	MOVF	r0x1024,W
 	XORLW	0x01
 	BTFSS	STATUS,2
-	GOTO	_00156_DS_
+	GOTO	_00236_DS_
 ;;signed compare: left < lit(0xA=10), size=2, mask=ffff
-;	.line	68; "bingo.c"	if (indiceNumeros < 10) {
+;	.line	94; "bingo.c"	if (indiceNumeros < 10) {
 	BANKSEL	_indiceNumeros
 	MOVF	(_indiceNumeros + 1),W
 	ADDLW	0x80
 	ADDLW	0x80
 	BTFSS	STATUS,2
-	GOTO	_00204_DS_
+	GOTO	_00275_DS_
 	MOVLW	0x0a
 	SUBWF	_indiceNumeros,W
-_00204_DS_:
+_00275_DS_:
 	BTFSC	STATUS,0
-	GOTO	_00151_DS_
+	GOTO	_00236_DS_
 ;;genSkipc:3307: created from rifx:00000000047A5780
-_00143_DS_:
-;	.line	70; "bingo.c"	numero = generarNumeroAleatorio();
+_00230_DS_:
+;	.line	97; "bingo.c"	numero = generarNumeroAleatorio();
 	PAGESEL	_generarNumeroAleatorio
 	CALL	_generarNumeroAleatorio
 	PAGESEL	$
 	BANKSEL	r0x1025
 	MOVWF	r0x1025
 	MOVF	STK00,W
-;	.line	71; "bingo.c"	} while (numeroYaGenerado(numero)); // Verificar si el número ya fue generado
+;	.line	98; "bingo.c"	} while (numeroYaGenerado(numero));
 	MOVWF	r0x1024
 	MOVWF	STK00
 	MOVF	r0x1025,W
 	PAGESEL	_numeroYaGenerado
 	CALL	_numeroYaGenerado
 	PAGESEL	$
-	BANKSEL	r0x1027
-	MOVWF	r0x1027
-	MOVF	STK00,W
-	MOVWF	r0x1026
-	IORWF	r0x1027,W
-	BTFSS	STATUS,2
-	GOTO	_00143_DS_
-;	.line	73; "bingo.c"	numerosGenerados[indiceNumeros++] = numero;
-	BANKSEL	_indiceNumeros
-	MOVF	_indiceNumeros,W
 	BANKSEL	r0x1026
 	MOVWF	r0x1026
+	MOVF	STK00,W
+	MOVWF	r0x1027
+	IORWF	r0x1026,W
+	BTFSS	STATUS,2
+	GOTO	_00230_DS_
+;	.line	100; "bingo.c"	numerosGenerados[indiceNumeros++] = numero;
 	BANKSEL	_indiceNumeros
-	MOVF	(_indiceNumeros + 1),W
+	MOVF	_indiceNumeros,W
 	BANKSEL	r0x1027
 	MOVWF	r0x1027
+	BANKSEL	_indiceNumeros
+	MOVF	(_indiceNumeros + 1),W
+	BANKSEL	r0x1026
+	MOVWF	r0x1026
 	BANKSEL	_indiceNumeros
 	INCF	_indiceNumeros,F
 	BTFSC	STATUS,2
 	INCF	(_indiceNumeros + 1),F
-	BANKSEL	r0x1026
-	MOVF	r0x1026,W
-	MOVWF	STK02
+	BANKSEL	r0x1027
 	MOVF	r0x1027,W
+	MOVWF	STK02
+	MOVF	r0x1026,W
 	MOVWF	STK01
 	MOVLW	0x02
 	MOVWF	STK00
@@ -299,23 +263,23 @@ _00143_DS_:
 	PAGESEL	__mulint
 	CALL	__mulint
 	PAGESEL	$
-	BANKSEL	r0x1027
-	MOVWF	r0x1027
+	BANKSEL	r0x1026
+	MOVWF	r0x1026
 	MOVF	STK00,W
-	MOVWF	r0x1026
+	MOVWF	r0x1027
 	ADDLW	(_numerosGenerados + 0)
-	MOVWF	r0x1026
-	MOVF	r0x1027,W
-	BTFSC	STATUS,0
-	INCFSZ	r0x1027,W
-	ADDLW	high (_numerosGenerados + 0)
 	MOVWF	r0x1027
 	MOVF	r0x1026,W
+	BTFSC	STATUS,0
+	INCFSZ	r0x1026,W
+	ADDLW	high (_numerosGenerados + 0)
+	MOVWF	r0x1026
+	MOVF	r0x1027,W
 	BANKSEL	FSR
 	MOVWF	FSR
 	BCF	STATUS,7
-	BANKSEL	r0x1027
-	BTFSC	r0x1027,0
+	BANKSEL	r0x1026
+	BTFSC	r0x1026,0
 	BSF	STATUS,7
 	MOVF	r0x1024,W
 	BANKSEL	INDF
@@ -325,79 +289,317 @@ _00143_DS_:
 	MOVF	r0x1025,W
 	BANKSEL	INDF
 	MOVWF	INDF
-	GOTO	_00152_DS_
-;;signed compare: left < lit(0x3=3), size=2, mask=ffff
-_00151_DS_:
-;	.line	74; "bingo.c"	} else if (contador99 < 3) {
-	BANKSEL	_contador99
-	MOVF	(_contador99 + 1),W
-	ADDLW	0x80
-	ADDLW	0x80
-	BTFSS	STATUS,2
-	GOTO	_00205_DS_
-	MOVLW	0x03
-	SUBWF	_contador99,W
-_00205_DS_:
-	BTFSC	STATUS,0
-	GOTO	_00148_DS_
-;;genSkipc:3307: created from rifx:00000000047A5780
-;	.line	75; "bingo.c"	numero = 99;
-	MOVLW	0x63
+;	.line	101; "bingo.c"	mostrarNumeroBCD(numero);
 	BANKSEL	r0x1024
-	MOVWF	r0x1024
-	CLRF	r0x1025
-;	.line	76; "bingo.c"	contador99++;
-	BANKSEL	_contador99
-	INCF	_contador99,F
-	BTFSC	STATUS,2
-	INCF	(_contador99 + 1),F
-	GOTO	_00152_DS_
-_00148_DS_:
-;	.line	79; "bingo.c"	indiceNumeros = 0;
-	BANKSEL	_indiceNumeros
-	CLRF	_indiceNumeros
-	CLRF	(_indiceNumeros + 1)
-;	.line	80; "bingo.c"	contador99 = 0;
-	BANKSEL	_contador99
-	CLRF	_contador99
-	CLRF	(_contador99 + 1)
-;	.line	81; "bingo.c"	for (int i = 0; i < 10; i++) {
-	BANKSEL	r0x1026
-	CLRF	r0x1026
-	CLRF	r0x1027
-	CLRF	r0x1028
-	CLRF	r0x1029
+	MOVF	r0x1024,W
+	MOVWF	STK00
+	MOVF	r0x1025,W
+	PAGESEL	_mostrarNumeroBCD
+	CALL	_mostrarNumeroBCD
+	PAGESEL	$
+;	.line	102; "bingo.c"	delay_ms(2000); // Mostrar el número durante 2 segundos
+	MOVLW	0xd0
+	MOVWF	STK00
+	MOVLW	0x07
+	PAGESEL	_delay_ms
+	CALL	_delay_ms
+	PAGESEL	$
 ;;signed compare: left < lit(0xA=10), size=2, mask=ffff
-_00162_DS_:
-	BANKSEL	r0x1027
-	MOVF	r0x1027,W
+_00236_DS_:
+;	.line	107; "bingo.c"	if (indiceNumeros >= 10 && contador9 < 3) {
+	BANKSEL	_indiceNumeros
+	MOVF	(_indiceNumeros + 1),W
 	ADDLW	0x80
 	ADDLW	0x80
 	BTFSS	STATUS,2
-	GOTO	_00206_DS_
+	GOTO	_00276_DS_
 	MOVLW	0x0a
-	SUBWF	r0x1026,W
-_00206_DS_:
-	BTFSC	STATUS,0
-	GOTO	_00156_DS_
+	SUBWF	_indiceNumeros,W
+_00276_DS_:
+	BTFSS	STATUS,0
+	GOTO	_00243_DS_
 ;;genSkipc:3307: created from rifx:00000000047A5780
-;	.line	82; "bingo.c"	numerosGenerados[i] = -1;
-	BANKSEL	r0x1028
-	MOVF	r0x1028,W
-	ADDLW	(_numerosGenerados + 0)
-	MOVWF	r0x102A
-	MOVLW	high (_numerosGenerados + 0)
-	MOVWF	r0x102B
-	MOVF	r0x1029,W
+;;signed compare: left < lit(0x3=3), size=2, mask=ffff
+	BANKSEL	_contador9
+	MOVF	(_contador9 + 1),W
+	ADDLW	0x80
+	ADDLW	0x80
+	BTFSS	STATUS,2
+	GOTO	_00277_DS_
+	MOVLW	0x03
+	SUBWF	_contador9,W
+_00277_DS_:
 	BTFSC	STATUS,0
-	INCFSZ	r0x1029,W
-	ADDWF	r0x102B,F
+	GOTO	_00243_DS_
+;;genSkipc:3307: created from rifx:00000000047A5780
+;	.line	108; "bingo.c"	parpadearNumero9();
+	PAGESEL	_parpadearNumero9
+	CALL	_parpadearNumero9
+	PAGESEL	$
+;	.line	109; "bingo.c"	contador9++;
+	BANKSEL	_contador9
+	INCF	_contador9,F
+	BTFSC	STATUS,2
+	INCF	(_contador9 + 1),F
+;;signed compare: left < lit(0x3=3), size=2, mask=ffff
+;	.line	110; "bingo.c"	if (contador9 >= 3) {
+	MOVF	(_contador9 + 1),W
+	ADDLW	0x80
+	ADDLW	0x80
+	BTFSS	STATUS,2
+	GOTO	_00278_DS_
+	MOVLW	0x03
+	SUBWF	_contador9,W
+_00278_DS_:
+	BTFSS	STATUS,0
+	GOTO	_00243_DS_
+;;genSkipc:3307: created from rifx:00000000047A5780
+;	.line	111; "bingo.c"	delay_ms(1000); // Esperar un poco antes de reiniciar
+	MOVLW	0xe8
+	MOVWF	STK00
+	MOVLW	0x03
+	PAGESEL	_delay_ms
+	CALL	_delay_ms
+	PAGESEL	$
+;	.line	112; "bingo.c"	reiniciarNumerosGenerados();
+	PAGESEL	_reiniciarNumerosGenerados
+	CALL	_reiniciarNumerosGenerados
+	PAGESEL	$
+	GOTO	_00243_DS_
+;	.line	116; "bingo.c"	}
+	RETURN	
+; exit point of _main
+
+;***
+;  pBlock Stats: dbName = C
+;***
+;has an exit
+;functions called:
+;   _mostrarNumeroBCD
+;   _delay_ms
+;   _delay_ms
+;   _mostrarNumeroBCD
+;   _delay_ms
+;   _delay_ms
+;1 compiler assigned register :
+;   STK00
+;; Starting pCode block
+S_bingo__parpadearNumero9	code
+_parpadearNumero9:
+; 2 exit points
+;	.line	82; "bingo.c"	mostrarNumeroBCD(9);
+	MOVLW	0x09
+	MOVWF	STK00
+	MOVLW	0x00
+	PAGESEL	_mostrarNumeroBCD
+	CALL	_mostrarNumeroBCD
+	PAGESEL	$
+;	.line	83; "bingo.c"	delay_ms(1000); // Encendido durante 500 ms
+	MOVLW	0xe8
+	MOVWF	STK00
+	MOVLW	0x03
+	PAGESEL	_delay_ms
+	CALL	_delay_ms
+	PAGESEL	$
+;	.line	84; "bingo.c"	GPIO &= 0xF0;  // Apagar GP0-GP3
+	MOVLW	0xf0
+	BANKSEL	_GPIO
+	ANDWF	_GPIO,F
+;	.line	85; "bingo.c"	delay_ms(500); // Apagado durante 500 ms
+	MOVLW	0xf4
+	MOVWF	STK00
+	MOVLW	0x01
+	PAGESEL	_delay_ms
+	CALL	_delay_ms
+	PAGESEL	$
+;	.line	86; "bingo.c"	}
+	RETURN	
+; exit point of _parpadearNumero9
+
+;***
+;  pBlock Stats: dbName = C
+;***
+;has an exit
+;functions called:
+;   _generarNumeroAleatorio
+;   _numeroYaGenerado
+;   _generarNumeroAleatorio
+;   __mulint
+;   _mostrarNumeroBCD
+;   _delay_ms
+;   _generarNumeroAleatorio
+;   _numeroYaGenerado
+;   _generarNumeroAleatorio
+;   __mulint
+;   _mostrarNumeroBCD
+;   _delay_ms
+;7 compiler assigned registers:
+;   r0x1028
+;   STK00
+;   r0x1029
+;   r0x102A
+;   r0x102B
+;   STK02
+;   STK01
+;; Starting pCode block
+S_bingo__generarYMostrarNumeros	code
+_generarYMostrarNumeros:
+; 2 exit points
+;	.line	72; "bingo.c"	int numero = generarNumeroAleatorio();
+	PAGESEL	_generarNumeroAleatorio
+	CALL	_generarNumeroAleatorio
+	PAGESEL	$
+	BANKSEL	r0x1028
+	MOVWF	r0x1028
+	MOVF	STK00,W
+	MOVWF	r0x1029
+_00219_DS_:
+;	.line	73; "bingo.c"	while (numeroYaGenerado(numero)) {
+	BANKSEL	r0x1029
+	MOVF	r0x1029,W
+	MOVWF	STK00
+	MOVF	r0x1028,W
+	PAGESEL	_numeroYaGenerado
+	CALL	_numeroYaGenerado
+	PAGESEL	$
+	BANKSEL	r0x102A
+	MOVWF	r0x102A
+	MOVF	STK00,W
+	MOVWF	r0x102B
+	IORWF	r0x102A,W
+	BTFSC	STATUS,2
+	GOTO	_00221_DS_
+;	.line	74; "bingo.c"	numero = generarNumeroAleatorio();
+	PAGESEL	_generarNumeroAleatorio
+	CALL	_generarNumeroAleatorio
+	PAGESEL	$
+	BANKSEL	r0x1028
+	MOVWF	r0x1028
+	MOVF	STK00,W
+	MOVWF	r0x1029
+	GOTO	_00219_DS_
+_00221_DS_:
+;	.line	76; "bingo.c"	numerosGenerados[indiceNumeros++] = numero;
+	BANKSEL	_indiceNumeros
+	MOVF	_indiceNumeros,W
+	BANKSEL	r0x102B
+	MOVWF	r0x102B
+	BANKSEL	_indiceNumeros
+	MOVF	(_indiceNumeros + 1),W
+	BANKSEL	r0x102A
+	MOVWF	r0x102A
+	BANKSEL	_indiceNumeros
+	INCF	_indiceNumeros,F
+	BTFSC	STATUS,2
+	INCF	(_indiceNumeros + 1),F
+	BANKSEL	r0x102B
+	MOVF	r0x102B,W
+	MOVWF	STK02
 	MOVF	r0x102A,W
+	MOVWF	STK01
+	MOVLW	0x02
+	MOVWF	STK00
+	MOVLW	0x00
+	PAGESEL	__mulint
+	CALL	__mulint
+	PAGESEL	$
+	BANKSEL	r0x102A
+	MOVWF	r0x102A
+	MOVF	STK00,W
+	MOVWF	r0x102B
+	ADDLW	(_numerosGenerados + 0)
+	MOVWF	r0x102B
+	MOVF	r0x102A,W
+	BTFSC	STATUS,0
+	INCFSZ	r0x102A,W
+	ADDLW	high (_numerosGenerados + 0)
+	MOVWF	r0x102A
+	MOVF	r0x102B,W
 	BANKSEL	FSR
 	MOVWF	FSR
 	BCF	STATUS,7
-	BANKSEL	r0x102B
-	BTFSC	r0x102B,0
+	BANKSEL	r0x102A
+	BTFSC	r0x102A,0
+	BSF	STATUS,7
+	MOVF	r0x1029,W
+	BANKSEL	INDF
+	MOVWF	INDF
+	INCF	FSR,F
+	BANKSEL	r0x1028
+	MOVF	r0x1028,W
+	BANKSEL	INDF
+	MOVWF	INDF
+;	.line	77; "bingo.c"	mostrarNumeroBCD(numero);
+	BANKSEL	r0x1029
+	MOVF	r0x1029,W
+	MOVWF	STK00
+	MOVF	r0x1028,W
+	PAGESEL	_mostrarNumeroBCD
+	CALL	_mostrarNumeroBCD
+	PAGESEL	$
+;	.line	78; "bingo.c"	delay_ms(1000);
+	MOVLW	0xe8
+	MOVWF	STK00
+	MOVLW	0x03
+	PAGESEL	_delay_ms
+	CALL	_delay_ms
+	PAGESEL	$
+;	.line	79; "bingo.c"	}
+	RETURN	
+; exit point of _generarYMostrarNumeros
+
+;***
+;  pBlock Stats: dbName = C
+;***
+;has an exit
+;6 compiler assigned registers:
+;   r0x101A
+;   r0x101B
+;   r0x101C
+;   r0x101D
+;   r0x101E
+;   r0x101F
+;; Starting pCode block
+S_bingo__reiniciarNumerosGenerados	code
+_reiniciarNumerosGenerados:
+; 2 exit points
+;	.line	64; "bingo.c"	for (int i = 0; i < 10; i++) {
+	BANKSEL	r0x101A
+	CLRF	r0x101A
+	CLRF	r0x101B
+	CLRF	r0x101C
+	CLRF	r0x101D
+;;signed compare: left < lit(0xA=10), size=2, mask=ffff
+_00201_DS_:
+	BANKSEL	r0x101B
+	MOVF	r0x101B,W
+	ADDLW	0x80
+	ADDLW	0x80
+	BTFSS	STATUS,2
+	GOTO	_00214_DS_
+	MOVLW	0x0a
+	SUBWF	r0x101A,W
+_00214_DS_:
+	BTFSC	STATUS,0
+	GOTO	_00199_DS_
+;;genSkipc:3307: created from rifx:00000000047A5780
+;	.line	65; "bingo.c"	numerosGenerados[i] = -1;
+	BANKSEL	r0x101C
+	MOVF	r0x101C,W
+	ADDLW	(_numerosGenerados + 0)
+	MOVWF	r0x101E
+	MOVLW	high (_numerosGenerados + 0)
+	MOVWF	r0x101F
+	MOVF	r0x101D,W
+	BTFSC	STATUS,0
+	INCFSZ	r0x101D,W
+	ADDWF	r0x101F,F
+	MOVF	r0x101E,W
+	BANKSEL	FSR
+	MOVWF	FSR
+	BCF	STATUS,7
+	BANKSEL	r0x101F
+	BTFSC	r0x101F,0
 	BSF	STATUS,7
 	MOVLW	0xff
 	BANKSEL	INDF
@@ -405,29 +607,100 @@ _00206_DS_:
 	INCF	FSR,F
 	MOVLW	0xff
 	MOVWF	INDF
-;	.line	81; "bingo.c"	for (int i = 0; i < 10; i++) {
+;	.line	64; "bingo.c"	for (int i = 0; i < 10; i++) {
 	MOVLW	0x02
-	BANKSEL	r0x1028
-	ADDWF	r0x1028,F
+	BANKSEL	r0x101C
+	ADDWF	r0x101C,F
 	BTFSC	STATUS,0
-	INCF	r0x1029,F
-	INCF	r0x1026,F
+	INCF	r0x101D,F
+	INCF	r0x101A,F
 	BTFSC	STATUS,2
-	INCF	r0x1027,F
-	GOTO	_00162_DS_
-_00152_DS_:
-;	.line	87; "bingo.c"	mostrarNumero(numero);
-	BANKSEL	r0x1024
-	MOVF	r0x1024,W
-	MOVWF	STK00
-	MOVF	r0x1025,W
-	PAGESEL	_mostrarNumero
-	CALL	_mostrarNumero
-	PAGESEL	$
-	GOTO	_00156_DS_
-;	.line	91; "bingo.c"	}
+	INCF	r0x101B,F
+	GOTO	_00201_DS_
+_00199_DS_:
+;	.line	67; "bingo.c"	indiceNumeros = 0;
+	BANKSEL	_indiceNumeros
+	CLRF	_indiceNumeros
+	CLRF	(_indiceNumeros + 1)
+;	.line	68; "bingo.c"	contador9 = 0;
+	BANKSEL	_contador9
+	CLRF	_contador9
+	CLRF	(_contador9 + 1)
+;	.line	69; "bingo.c"	}
 	RETURN	
-; exit point of _main
+; exit point of _reiniciarNumerosGenerados
+
+;***
+;  pBlock Stats: dbName = C
+;***
+;has an exit
+;9 compiler assigned registers:
+;   r0x101A
+;   STK00
+;   r0x101B
+;   r0x101C
+;   r0x101D
+;   r0x101E
+;   r0x101F
+;   r0x1020
+;   r0x1021
+;; Starting pCode block
+S_bingo__delay_ms	code
+_delay_ms:
+; 2 exit points
+;	.line	56; "bingo.c"	void delay_ms(unsigned int milliseconds) {
+	BANKSEL	r0x101A
+	MOVWF	r0x101A
+	MOVF	STK00,W
+	MOVWF	r0x101B
+;	.line	58; "bingo.c"	for (i = 0; i < milliseconds; i++) {
+	CLRF	r0x101C
+	CLRF	r0x101D
+_00173_DS_:
+	BANKSEL	r0x101A
+	MOVF	r0x101A,W
+	SUBWF	r0x101D,W
+	BTFSS	STATUS,2
+	GOTO	_00194_DS_
+	MOVF	r0x101B,W
+	SUBWF	r0x101C,W
+_00194_DS_:
+	BTFSC	STATUS,0
+	GOTO	_00175_DS_
+;;genSkipc:3307: created from rifx:00000000047A5780
+;	.line	59; "bingo.c"	for (j = 0; j < 200; j++) { }
+	MOVLW	0xc8
+	BANKSEL	r0x101E
+	MOVWF	r0x101E
+	CLRF	r0x101F
+_00171_DS_:
+	MOVLW	0xff
+	BANKSEL	r0x101E
+	ADDWF	r0x101E,W
+	MOVWF	r0x1020
+	MOVLW	0xff
+	MOVWF	r0x1021
+	MOVF	r0x101F,W
+	BTFSC	STATUS,0
+	INCFSZ	r0x101F,W
+	ADDWF	r0x1021,F
+	MOVF	r0x1020,W
+	MOVWF	r0x101E
+	MOVF	r0x1021,W
+	MOVWF	r0x101F
+	MOVF	r0x1021,W
+	IORWF	r0x1020,W
+	BTFSS	STATUS,2
+	GOTO	_00171_DS_
+;	.line	58; "bingo.c"	for (i = 0; i < milliseconds; i++) {
+	INCF	r0x101C,F
+	BTFSC	STATUS,2
+	INCF	r0x101D,F
+	GOTO	_00173_DS_
+_00175_DS_:
+;	.line	61; "bingo.c"	}
+	RETURN	
+; exit point of _delay_ms
 
 ;***
 ;  pBlock Stats: dbName = C
@@ -449,31 +722,37 @@ _00152_DS_:
 S_bingo__numeroYaGenerado	code
 _numeroYaGenerado:
 ; 2 exit points
-;	.line	43; "bingo.c"	int numeroYaGenerado(int numero) {
+;	.line	47; "bingo.c"	int numeroYaGenerado(int numero) {
 	BANKSEL	r0x101A
 	MOVWF	r0x101A
 	MOVF	STK00,W
 	MOVWF	r0x101B
-;	.line	44; "bingo.c"	for (int i = 0; i < 10; i++) {
+;	.line	48; "bingo.c"	for (int i = 0; i < indiceNumeros; i++) {
 	CLRF	r0x101C
 	CLRF	r0x101D
 	CLRF	r0x101E
 	CLRF	r0x101F
-;;signed compare: left < lit(0xA=10), size=2, mask=ffff
-_00121_DS_:
+_00146_DS_:
 	BANKSEL	r0x101D
 	MOVF	r0x101D,W
 	ADDLW	0x80
+	MOVWF	r0x1020
+	BANKSEL	_indiceNumeros
+	MOVF	(_indiceNumeros + 1),W
 	ADDLW	0x80
+	BANKSEL	r0x1020
+	SUBWF	r0x1020,W
 	BTFSS	STATUS,2
-	GOTO	_00137_DS_
-	MOVLW	0x0a
+	GOTO	_00162_DS_
+	BANKSEL	_indiceNumeros
+	MOVF	_indiceNumeros,W
+	BANKSEL	r0x101C
 	SUBWF	r0x101C,W
-_00137_DS_:
+_00162_DS_:
 	BTFSC	STATUS,0
-	GOTO	_00119_DS_
+	GOTO	_00144_DS_
 ;;genSkipc:3307: created from rifx:00000000047A5780
-;	.line	45; "bingo.c"	if (numerosGenerados[i] == numero) {
+;	.line	49; "bingo.c"	if (numerosGenerados[i] == numero) {
 	BANKSEL	r0x101E
 	MOVF	r0x101E,W
 	ADDLW	(_numerosGenerados + 0)
@@ -503,18 +782,18 @@ _00137_DS_:
 	MOVF	r0x101B,W
 	XORWF	r0x1022,W
 	BTFSS	STATUS,2
-	GOTO	_00122_DS_
+	GOTO	_00147_DS_
 	MOVF	r0x101A,W
 	XORWF	r0x1023,W
 	BTFSS	STATUS,2
-	GOTO	_00122_DS_
-;	.line	46; "bingo.c"	return 1; // Número ya fue generado
+	GOTO	_00147_DS_
+;	.line	50; "bingo.c"	return 1;
 	MOVLW	0x01
 	MOVWF	STK00
 	MOVLW	0x00
-	GOTO	_00123_DS_
-_00122_DS_:
-;	.line	44; "bingo.c"	for (int i = 0; i < 10; i++) {
+	GOTO	_00148_DS_
+_00147_DS_:
+;	.line	48; "bingo.c"	for (int i = 0; i < indiceNumeros; i++) {
 	MOVLW	0x02
 	BANKSEL	r0x101E
 	ADDWF	r0x101E,F
@@ -523,14 +802,14 @@ _00122_DS_:
 	INCF	r0x101C,F
 	BTFSC	STATUS,2
 	INCF	r0x101D,F
-	GOTO	_00121_DS_
-_00119_DS_:
-;	.line	49; "bingo.c"	return 0; // Número no ha sido generado
+	GOTO	_00146_DS_
+_00144_DS_:
+;	.line	53; "bingo.c"	return 0;
 	MOVLW	0x00
 	MOVWF	STK00
 	MOVLW	0x00
-_00123_DS_:
-;	.line	50; "bingo.c"	}
+_00148_DS_:
+;	.line	54; "bingo.c"	}
 	RETURN	
 ; exit point of _numeroYaGenerado
 
@@ -538,97 +817,126 @@ _00123_DS_:
 ;  pBlock Stats: dbName = C
 ;***
 ;has an exit
-;functions called:
-;   __divsint
-;   __modsint
-;   __divsint
-;   __modsint
-;8 compiler assigned registers:
+;4 compiler assigned registers:
 ;   r0x101A
 ;   STK00
 ;   r0x101B
-;   STK02
-;   STK01
 ;   r0x101C
-;   r0x101D
-;   r0x101E
 ;; Starting pCode block
-S_bingo__mostrarNumero	code
-_mostrarNumero:
+S_bingo__mostrarNumeroBCD	code
+_mostrarNumeroBCD:
 ; 2 exit points
-;	.line	33; "bingo.c"	void mostrarNumero(int numero) {
+;	.line	28; "bingo.c"	void mostrarNumeroBCD(int numeroBCD) {
 	BANKSEL	r0x101A
 	MOVWF	r0x101A
 	MOVF	STK00,W
 	MOVWF	r0x101B
-;	.line	34; "bingo.c"	int decenas = numero / 10; // Extraer las decenas
-	MOVLW	0x0a
-	MOVWF	STK02
-	MOVLW	0x00
-	MOVWF	STK01
-	MOVF	r0x101B,W
-	MOVWF	STK00
-	MOVF	r0x101A,W
-	PAGESEL	__divsint
-	CALL	__divsint
-	PAGESEL	$
-;;1	MOVWF	r0x101C
-	MOVF	STK00,W
-	BANKSEL	r0x101D
-	MOVWF	r0x101D
-;	.line	35; "bingo.c"	int unidades = numero % 10; // Extraer las unidades
-	MOVLW	0x0a
-	MOVWF	STK02
-	MOVLW	0x00
-	MOVWF	STK01
-	MOVF	r0x101B,W
-	MOVWF	STK00
-	MOVF	r0x101A,W
-	PAGESEL	__modsint
-	CALL	__modsint
-	PAGESEL	$
+;	.line	32; "bingo.c"	GPIO &= 0xF0; // Mantener GP0, GP1, GP2 y GP4 en bajo (0)
+	MOVLW	0xf0
+	BANKSEL	_GPIO
+	ANDWF	_GPIO,F
+;;signed compare: left < lit(0x0=0), size=2, mask=ffff
+;	.line	34; "bingo.c"	if (numeroBCD >= 0 && numeroBCD <= 9) {
+	BSF	STATUS,0
 	BANKSEL	r0x101A
-	MOVWF	r0x101A
-	MOVF	STK00,W
-;	.line	38; "bingo.c"	GP0 = unidades; // Enviar unidades al primer display
-	MOVWF	r0x101B
-	MOVWF	r0x101E
-	RRF	r0x101E,W
+	BTFSS	r0x101A,7
+	BCF	STATUS,0
 	BTFSC	STATUS,0
+	GOTO	_00118_DS_
+;;genSkipc:3307: created from rifx:00000000047A5780
+;;swapping arguments (AOP_TYPEs 1/2)
+;;signed compare: left >= lit(0xA=10), size=2, mask=ffff
+	MOVF	r0x101A,W
+	ADDLW	0x80
+	ADDLW	0x80
+	BTFSS	STATUS,2
+	GOTO	_00132_DS_
+	MOVLW	0x0a
+	SUBWF	r0x101B,W
+_00132_DS_:
+	BTFSC	STATUS,0
+	GOTO	_00118_DS_
+;;genSkipc:3307: created from rifx:00000000047A5780
+;	.line	36; "bingo.c"	GPIO |= (numeroBCD & 0x07); 
+	BANKSEL	r0x101B
+	MOVF	r0x101B,W
+	MOVWF	r0x101C
+	MOVLW	0x07
+	ANDWF	r0x101C,F
+	MOVF	r0x101C,W
+	BANKSEL	_GPIO
+	IORWF	_GPIO,F
+;;signed compare: left < lit(0x8=8), size=2, mask=ffff
+;	.line	39; "bingo.c"	if (numeroBCD >= 8) {
+	BANKSEL	r0x101A
+	MOVF	r0x101A,W
+	ADDLW	0x80
+	ADDLW	0x80
+	BTFSS	STATUS,2
+	GOTO	_00133_DS_
+	MOVLW	0x08
+	SUBWF	r0x101B,W
+_00133_DS_:
+	BTFSS	STATUS,0
+	GOTO	_00118_DS_
+;;genSkipc:3307: created from rifx:00000000047A5780
+;	.line	40; "bingo.c"	GPIO |= (1 << GP4);
+	BANKSEL	r0x101B
+	CLRF	r0x101B
+	BANKSEL	_GPIObits
+	BTFSS	_GPIObits,4
 	GOTO	_00002_DS_
-	BANKSEL	_GPIObits
-	BCF	_GPIObits,0
+	BANKSEL	r0x101B
+	INCF	r0x101B,F
 _00002_DS_:
-	BTFSS	STATUS,0
-	GOTO	_00003_DS_
-	BANKSEL	_GPIObits
-	BSF	_GPIObits,0
-_00003_DS_:
-;	.line	39; "bingo.c"	GP1 = decenas;  // Enviar decenas al segundo display
-	BANKSEL	r0x101D
-	MOVF	r0x101D,W
+	BANKSEL	r0x101B
+	MOVF	r0x101B,W
+	MOVWF	r0x101A
+	MOVLW	0x01
 	MOVWF	r0x101B
-	RRF	r0x101B,W
-	BTFSC	STATUS,0
-	GOTO	_00004_DS_
-	BANKSEL	_GPIObits
-	BCF	_GPIObits,1
-_00004_DS_:
+	MOVF	r0x101A,W
+	BTFSC	r0x101A,7
+	GOTO	_00137_DS_
+	SUBLW	0x00
+	BTFSC	STATUS,2
+	GOTO	_00135_DS_
+_00134_DS_:
+	BANKSEL	r0x101B
+	RLF	r0x101B,F
+	ADDLW	0x01
 	BTFSS	STATUS,0
-	GOTO	_00005_DS_
-	BANKSEL	_GPIObits
-	BSF	_GPIObits,1
-_00005_DS_:
-;	.line	40; "bingo.c"	}
+	GOTO	_00134_DS_
+	GOTO	_00135_DS_
+_00137_DS_:
+	BCF	STATUS,0
+	BANKSEL	r0x101B
+	BTFSC	r0x101B,7
+	BSF	STATUS,0
+	RRF	r0x101B,F
+	ADDLW	0x01
+	BTFSS	STATUS,0
+	GOTO	_00137_DS_
+_00135_DS_:
+	BANKSEL	_GPIO
+	MOVF	_GPIO,W
+	BANKSEL	r0x101A
+	MOVWF	r0x101A
+	IORWF	r0x101B,W
+	BANKSEL	_GPIO
+	MOVWF	_GPIO
+_00118_DS_:
+;	.line	43; "bingo.c"	}
 	RETURN	
-; exit point of _mostrarNumero
+; exit point of _mostrarNumeroBCD
 
 ;***
 ;  pBlock Stats: dbName = C
 ;***
 ;has an exit
 ;functions called:
+;   __mulint
 ;   __moduint
+;   __mulint
 ;   __moduint
 ;5 compiler assigned registers:
 ;   STK02
@@ -640,29 +948,47 @@ _00005_DS_:
 S_bingo__generarNumeroAleatorio	code
 _generarNumeroAleatorio:
 ; 2 exit points
-;	.line	28; "bingo.c"	contador++;  // Incrementar el contador
-	BANKSEL	_contador
-	INCF	_contador,F
+;	.line	21; "bingo.c"	seed = seed + 1;  // Incrementa la semilla
+	BANKSEL	_seed
+	INCF	_seed,F
 	BTFSC	STATUS,2
-	INCF	(_contador + 1),F
-;	.line	29; "bingo.c"	return (contador % 100);  // Retornar un número entre 0 y 99
-	MOVLW	0x64
+	INCF	(_seed + 1),F
+;	.line	22; "bingo.c"	return (seed * 32719 + 3) % 10;  // Genera un número entre 0 y 9
+	MOVF	_seed,W
+	MOVWF	STK02
+	MOVF	(_seed + 1),W
+	MOVWF	STK01
+	MOVLW	0xcf
+	MOVWF	STK00
+	MOVLW	0x7f
+	PAGESEL	__mulint
+	CALL	__mulint
+	PAGESEL	$
+	BANKSEL	r0x101A
+	MOVWF	r0x101A
+	MOVF	STK00,W
+	MOVWF	r0x101B
+	MOVLW	0x03
+	ADDWF	r0x101B,F
+	BTFSC	STATUS,0
+	INCF	r0x101A,F
+	MOVLW	0x0a
 	MOVWF	STK02
 	MOVLW	0x00
 	MOVWF	STK01
-	MOVF	_contador,W
+	MOVF	r0x101B,W
 	MOVWF	STK00
-	MOVF	(_contador + 1),W
+	MOVF	r0x101A,W
 	PAGESEL	__moduint
 	CALL	__moduint
 	PAGESEL	$
 	BANKSEL	r0x101A
 	MOVWF	r0x101A
 	MOVF	STK00,W
-;;1	MOVWF	r0x101B
+	MOVWF	r0x101B
 	MOVWF	STK00
 	MOVF	r0x101A,W
-;	.line	30; "bingo.c"	}
+;	.line	23; "bingo.c"	}
 	RETURN	
 ; exit point of _generarNumeroAleatorio
 
@@ -674,21 +1000,21 @@ _generarNumeroAleatorio:
 S_bingo__initPIC	code
 _initPIC:
 ; 2 exit points
-;	.line	18; "bingo.c"	ANSEL = 0x00; // Todos los pines como digitales
+;	.line	15; "bingo.c"	ANSEL = 0x00;
 	BANKSEL	_ANSEL
 	CLRF	_ANSEL
-;	.line	19; "bingo.c"	TRISIO = 0x20; // GP5 como entrada, otros como salida
+;	.line	16; "bingo.c"	TRISIO = 0x20;
 	MOVLW	0x20
 	MOVWF	_TRISIO
-;	.line	20; "bingo.c"	GPIO = 0x00; // Todos los pines en bajo
+;	.line	17; "bingo.c"	GPIO = 0x00;
 	BANKSEL	_GPIO
 	CLRF	_GPIO
-;	.line	23; "bingo.c"	}
+;	.line	18; "bingo.c"	}
 	RETURN	
 ; exit point of _initPIC
 
 
 ;	code size estimation:
-;	  295+   77 =   372 instructions (  898 byte)
+;	  438+  130 =   568 instructions ( 1396 byte)
 
 	end
