@@ -17,9 +17,16 @@ volatile uint8_t tiempoSeleccionado = 0;
 volatile uint8_t tiempoSeleccionadoSegundo = 0;
 volatile uint8_t tiempoSeleccionadoTercero = 0;
 volatile uint8_t tiempoSeleccionadoCuarto = 0;
-// Pin para el "1" lógico  PB0 que nos dará paso a accionar el motor
-const uint8_t pinLogico = PB0;
-// Configuración inicial de los pines
+// Pin PB0 que nos dará paso a accionar el motor
+const uint8_t pinMotor = PB0;
+// Define los pines para los LEDs
+const uint8_t pinLED = PD1;//Suministro de agua
+const uint8_t pinLED2 = PD3;//Lavar
+const uint8_t pinLED3 = PD4;//Enjuagar
+const uint8_t pinLED4 = PD5;//Centrifugar
+
+
+
 void setup() {
     // Configurar el pin del botón como entrada con pull-up
     DDRD &= ~(1 << PD2); // Configura PD2 como entrada
@@ -27,9 +34,20 @@ void setup() {
     DDRB &= ~((1 << PB5) | (1 << PB6) | (1 << PB7)); // Configura PB5, PB6 y PB7 como entradas
     PORTB |= ((1 << PB5) | (1 << PB6) | (1 << PB7)); // Habilita las resistencias pull-up
 
-     // Configura el pin para el "1" lógico como salida y asegura que esté en bajo al inicio
-    DDRB |= (1 << pinLogico);
-    PORTB &= ~(1 << pinLogico);
+     // Configura el pin para  como salida y asegura que esté en bajo al inicio
+    DDRB |= (1 << pinMotor);
+    PORTB &= ~(1 << pinMotor);
+
+     // Configura los pines de los LEDs como salida
+    DDRD |= (1 << pinLED);
+    PORTD &= ~(1 << pinLED);// Asegura de que el LED esté apagado al inicio
+    DDRD |= (1 << pinLED2);
+    PORTD &= ~(1 << pinLED2); // Asegura de que el LED esté apagado al inicio
+    DDRD |= (1 << pinLED3);
+    PORTD &= ~(1 << pinLED3);// Asegura de que el LED esté apagado al inicio
+    DDRD |= (1 << pinLED4);
+    PORTD &= ~(1 << pinLED4);// Asegura de que el LED esté apagado al inicio
+    
 
 
     // Configurar pines PB1 a PB4 para salida BCD como salida
@@ -107,52 +125,63 @@ int main(void) {
                 break;
 
             case CONTANDO:
-                // El primer temporizador está activo y no debe activar el pin lógico.
+                // El primer temporizador está activo y no debe activar el pin del motor.
                 if (contador < tiempoSeleccionado) {
+                    PORTD |= (1 << pinLED); //Encender el led de suministro de agua
                     _delay_ms(1000); // Espera 1 segundo
                     contador++;
                     actualizarBCD(contador);
                 } else {
-                    estadoActual = SEGUNDO_TEMPORIZADOR;
-                    contadorSegundo = 0; // Reinicia el contador del segundo temporizador
                     _delay_ms(1000);// Este delay es para que el ultimo segundo se muestre y no pase directamente al siguiente timer 
+                    PORTD &= ~(1 << pinLED);
+                    estadoActual = SEGUNDO_TEMPORIZADOR;
+                    contadorSegundo = 0; // Reinicia el contador del segundo temporizador 
                     actualizarBCD(0);
                     
                 }
                 break;
 
             case PAUSADO:
-                // El primer temporizador está pausado y no debe activar el pin lógico.
+                // El primer temporizador está pausado y el led debe apagarse.
+                PORTD &= ~(1 << pinLED);
                 break;
 
              case SEGUNDO_TEMPORIZADOR:
-                PORTB |= (1 << pinLogico); // Activa el "1" lógico solo cuando el segundo temporizador está contando
+                            
+                PORTB |= (1 << pinMotor); // Activa el pin del motor solo cuando el segundo temporizador está contando
                 if (contadorSegundo < tiempoSeleccionadoSegundo) {
+                    PORTB |= (1 << pinMotor); // Activa el pin del motor solo cuando el segundo temporizador está contando
+                    PORTD |= (1 << pinLED2);//Encender el LED correspondiente 
                     _delay_ms(1000); // Espera 1 segundo
                     contadorSegundo++;
                     actualizarBCD(contadorSegundo);
                 } else {
-                    PORTB &= ~(1 << pinLogico); // Detiene el "1" lógico cuando el segundo temporizador finalice
-                     _delay_ms(1000); // Espera 1 segundo
-                     actualizarBCD(0);
+                    _delay_ms(1000); // Espera 1 segundo
+                    PORTB &= ~(1 << pinMotor); // Detiene el motor
+                    PORTD &= ~(1 << pinLED2);//Se apaga el LED
+                    PORTB &= ~(1 << pinMotor); // Detiene el motor cuando el segundo temporizador finalice 
+                    actualizarBCD(0);
 
                     estadoActual = TERCER_TEMPORIZADOR;
                 }
                 break;
 
             case SEGUNDO_PAUSADO:
-                PORTB &= ~(1 << pinLogico); // Detiene el "1" lógico si el segundo temporizador está pausado
+                PORTD &= ~(1 << pinLED2);
+                PORTB &= ~(1 << pinMotor); // Detiene el "1" lógico si el segundo temporizador está pausado
                 break;
 
             case TERCER_TEMPORIZADOR:
-                PORTB |= (1 << pinLogico); // Activa el "1" lógico solo cuando el segundo temporizador está contando
                 if (contadorTercero < tiempoSeleccionadoTercero) {
+                    PORTB |= (1 << pinMotor); // Activa el motor solo cuando el temporizador está contando
+                    PORTD |= (1 << pinLED3);//Encender el LED correspondiente
                     _delay_ms(1000); // Espera 1 segundo
                     contadorTercero++;
                     actualizarBCD(contadorTercero);
                 } else {
-                    PORTB &= ~(1 << pinLogico); // Detiene el "1" lógico cuando el segundo temporizador finalice
                     _delay_ms(1000); // Espera 1 segundo
+                    PORTD &= ~(1 << pinLED3);//Se apaga el LED
+                    PORTB &= ~(1 << pinMotor); // Detiene el motor cuando el temporizador finalice
                     actualizarBCD(0);
                     estadoActual = CUARTO_TEMPORIZADOR;
 
@@ -160,18 +189,21 @@ int main(void) {
                 break;
 
             case TERCER_PAUSADO:
-                PORTB &= ~(1 << pinLogico); // Detiene el "1" lógico si el segundo temporizador está pausado
+                PORTD &= ~(1 << pinLED3);
+                PORTB &= ~(1 << pinMotor); // Detiene el motor si se pausa durante el tercer temporizador 
                 break;
             
             case CUARTO_TEMPORIZADOR:
-                PORTB |= (1 << pinLogico); // Activa el "1" lógico solo cuando el segundo temporizador está contando
                 if (contadorCuarto < tiempoSeleccionadoCuarto) {
+                    PORTB |= (1 << pinMotor); // Activa el motor mientras el temporizador esté activo
+                    PORTD |= (1 << pinLED4);//Encender el LED correspondiente
                     _delay_ms(1000); // Espera 1 segundo
                     contadorCuarto++;
                     actualizarBCD(contadorCuarto);
                 } else {
-                    PORTB &= ~(1 << pinLogico); // Detiene el "1" lógico cuando el segundo temporizador finalice
                     _delay_ms(1000); // Espera 1 segundo
+                    PORTD &= ~(1 << pinLED4);//Se apaga el LED
+                    PORTB &= ~(1 << pinMotor); // Detiene el "1" lógico cuando el segundo temporizador finalice
                     actualizarBCD(0);
                     estadoActual = FINALIZADO;
 
@@ -179,7 +211,8 @@ int main(void) {
                 break;
 
             case CUARTO_PAUSADO:
-                PORTB &= ~(1 << pinLogico); // Detiene el "1" lógico si el segundo temporizador está pausado
+                PORTD &= ~(1 << pinLED4);//Se apaga el LED
+                PORTB &= ~(1 << pinMotor); // Detiene el "1" lógico si el segundo temporizador está pausado
                 break;
 
 
