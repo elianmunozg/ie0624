@@ -8,6 +8,7 @@ void setup() {
     // Configurar los pines de los botones como entrada con pull-up
     DDRB &= ~((1 << PB0) | (1 << PB5) | (1 << PB6) | (1 << PB7));
     PORTB |= (1 << PB0) | (1 << PB5) | (1 << PB6) | (1 << PB7);
+    
 
     // Configurar pines para salida BCD como salida
     DDRB |= 0x1E;
