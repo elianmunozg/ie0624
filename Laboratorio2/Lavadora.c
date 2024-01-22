@@ -219,9 +219,15 @@ int main(void) {
 
             case FINALIZADO:
                 _delay_ms(1000);
+                contador = 0;
+                contadorSegundo = 0;
+                contadorTercero = 0;
+                contadorCuarto = 0;
+
 
                 actualizarBCD(0); // Reinicia el display a 0 cuando ambos temporizadores han terminado
                 // Aquí puedes manejar lo que sucede después de que ambos temporizadores hayan terminado
+                estadoActual = ESPERA;
                 break;
         }
         
